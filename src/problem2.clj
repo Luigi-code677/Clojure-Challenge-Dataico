@@ -1,8 +1,9 @@
-(ns problem2 (:require [clojure.data.json :as json]
-                       [clojure.java.io :as io]
-                       [clojure.spec.alpha :as s]
-                       [java-time :as jt]
-                       [invoice-spec :as spec]))
+(ns problem2
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [clojure.spec.alpha :as s]
+            [java-time :as jt]
+            [invoice-spec :as spec]))
 
 (defn read-json-file [filename]
   (with-open [reader (io/reader filename)]
@@ -25,22 +26,20 @@
                             :invoice-item/quantity (double (:quantity item))
                             :invoice-item/sku (:sku item)
                             :invoice-item/taxes (map (fn [tax]
-                                                       {:tax/category (:tax_category tax)
-                                                        :tax/rate (double (:tax_rate tax))}) (:taxes item))}) items)
-     :invoice/retentions (map (fn [retention]
-                                {:tax/category (:tax_category retention)
-                                 :tax/rate (double (:tax_rate retention))}) retentions)}))
+                                                       {:tax/category (keyword (clojure.string/lower-case (:tax_category tax)))
+                                                        :tax/rate (double (:tax_rate tax))}) (:taxes item))}) items)}))
 
-
-(defn validate-invoice [filename]
+(defn invoice-from-file [filename]
   (let [invoice-json (read-json-file filename)
         transformed-invoice (transform-invoice invoice-json)]
-    (s/valid? ::spec/invoice transformed-invoice)
-    (println "Transformed Invoice:" transformed-invoice)
-    ))
+    transformed-invoice))
+
+(defn validate-invoice [filename]
+  (let [invoice (invoice-from-file filename)]
+    (println "Transformed Invoice:" invoice)
+    (s/valid? ::spec/invoice invoice)))
 
 
-(defn validate-invoice-file [filename]
-  (validate-invoice filename))
+(let [invoice (invoice-from-file "invoice.json")] (println "Invoice map:" invoice))
 
-(println (validate-invoice-file "invoice.json"))
+
